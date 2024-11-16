@@ -90,8 +90,8 @@ public class Mechoop extends LinearOpMode {
             spin.setPower(-clawSpin);
             wrist.setPower(clawWrist);
 
-            ram.setPower(linear);
-            rotation.setPower(rotate);
+            
+            
 /*
             double powerFL = (1);
             double powerBL = (1);
@@ -99,17 +99,19 @@ public class Mechoop extends LinearOpMode {
             double powerBR = (1);
 */
             if(rotation.getCurrentPosition() > 1) {
-                rotate = -gamepad2.left_stick_x;
+                rotation.setZeroPowerBehavior();
+                rotation.setPower(-0.1);
             }
             else {
-                rotate = gamepad2.left_stick_x;
+                rotation.setPower(rotate);
             }
             
             if(ram.getCurrentPosition() > 0.8) {
-                linear = -gamepad2.left_stick_y
+                ram.setZeroPowerBehavior();
+                ram.setPower(-0.1);
             }
             else {
-                linear = gamepad2.left_stick_y
+                ram.setPower(linear);
             }
             
             if(slowMode) {
