@@ -1,0 +1,305 @@
+package org.firstinspires.ftc.teamcode.TeleOp;
+import com.qualcomm.robotcore.*;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+
+import java.util.concurrent.TimeUnit;
+//the port 0 of Control Hub is IMU apparently
+@TeleOp(name = "Mechoop")
+public class Mechoop extends LinearOpMode {
+    private IMU imu;
+    // For whatever reason, this does not work when uncommented and causes EMERGENCY STOP NullPointerException crash
+    // private DcMotor motorFL = hardwareMap.dcMotor.get("motorFrontLeft");
+    // private DcMotor motorFR = hardwareMap.dcMotor.get("motorFrontRight");
+    // private DcMotor motorBL = hardwareMap.dcMotor.get("motorBackLeft");
+    // private DcMotor motorBR = hardwareMap.dcMotor.get("motorBackRight");
+    DcMotorEx FL;
+    DcMotorEx BL;
+    DcMotorEx FR;
+    DcMotorEx BR;
+    DcMotorEx slide;
+
+
+
+
+    @Override
+    public void runOpMode() throws InterruptedException{
+        // Why are these declared inside of a function instead of the class?
+        FL = hardwareMap.get(DcMotorEx.class, "BR");
+        BR = hardwareMap.get(DcMotorEx.class, "FL");
+        FR = hardwareMap.get(DcMotorEx.class, "BL");
+        BL = hardwareMap.get(DcMotorEx.class, "FR");
+        slide = hardwareMap.get(DcMotorEx.class, "rem");
+
+
+        Servo germany = hardwareMap.servo.get("axonpowers1");
+        Servo japan = hardwareMap.servo.get("axonpowers2");
+        Servo italy = hardwareMap.servo.get("outClaw");
+        Servo aqua = hardwareMap.servo.get("aqua");
+        Servo ruby = hardwareMap.servo.get("ruby");
+        Servo kana = hardwareMap.servo.get("kana");
+        Servo akane = hardwareMap.servo.get("akane");
+        ElapsedTime runtime = new ElapsedTime();
+
+
+
+        //zeroPowerBehavior makes the motors seize up when not moving so they dont slide. Like me at a party.
+        // Goated comment
+
+
+        FL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        FR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        BL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        BR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        imu = hardwareMap.get(IMU.class, "imu");
+        slide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+
+        FL.setDirection((DcMotorSimple.Direction.REVERSE));
+        //motorBL.setDirection((DcMotorSimple.Direction.REVERSE));
+        BR.setDirection((DcMotorSimple.Direction.REVERSE));
+        boolean first = true;
+        boolean counter = true;
+        int count = 0;
+
+        int temp = 0;
+        boolean first2 = false;
+        int count2 = 0;
+
+        waitForStart();
+        int opclosval = 0;
+        if(isStopRequested()) return;
+        while(!isStarted()){
+            IMUTelemetry();
+        }
+        while(opModeIsActive()) {
+
+
+            double rempow = gamepad2.left_stick_y;
+            //gamepad 1
+            double y = -gamepad1.left_stick_y;
+            double x = gamepad1.left_stick_x;
+            double rx = -gamepad1.right_stick_x;
+            double lb = gamepad1.left_trigger;
+            boolean slowMode = gamepad1.left_stick_button;
+            boolean ja10 = gamepad1.x;
+            boolean transfer = gamepad1.y;
+            boolean full = gamepad1.a;
+            boolean drop = gamepad2.y;
+            //gamepad2
+            double slides = gamepad2.right_stick_y;
+            boolean outClaw = gamepad2.a;
+            boolean arm = gamepad2.b;
+
+
+
+            int rotateTarget;
+            int linearTarget;
+
+
+            //drive calc
+            double powerFL = (y + x + rx);
+            double powerBL = (y - x + rx);
+            double powerFR = (y - x - rx);
+            double powerBR = (y + x - rx);
+            IMUTelemetry();
+            getAngle();
+
+            //slid
+            slide.setPower(-rempow);
+
+            //goofy ahh claw stuff
+
+
+
+
+
+//            double powerFL = (1);
+//            double powerBL = (1);
+//            double powerFR = (1);
+//            double powerBR = (1);
+
+            //test grab-and-transfer mechanism. ism? isms? WOO!
+            if(full == true){
+                ja10 = true;
+                transfer = true;
+            } else {
+                ja10 = gamepad1.x;
+                transfer = gamepad1.y;
+            }
+
+
+            if(ja10 == true){
+
+                    count++;
+                    ja10 = false;
+                    sleep(250);
+                    first = true;
+            }
+            if(transfer == true){
+
+                count2++;
+                transfer = false;
+                sleep(250);
+                first2 = true;
+
+            }
+            opclosval = count%2;
+            temp = count2%2;
+
+
+
+
+            boolean res = false;
+
+
+            slide.setPower(slides);
+
+            if(opclosval == 0){ //to unextend it
+                if(temp==0){
+                if(first == true) {
+                    aqua.setPosition(1);
+                    sleep(100);
+                    first = false;
+
+                    ruby.setPosition(1);
+                    sleep(200);
+                    aqua.setPosition(0);
+                    sleep(200);
+
+                }
+
+
+                BL.setPower(powerBL);
+                BR.setPower(powerBR);
+                FR.setPower(-powerFR);
+                FL.setPower(-powerFL);
+
+
+                germany.setPosition(-0.95);
+                japan.setPosition(1);
+}
+//                kana.setPosition(1);
+//                akane.setPosition(1);
+
+            }
+            else{ //slides are not extended and go extend
+                if(temp==0){
+                if(first == true) {
+                    aqua.setPosition(0.70);//0.75
+                    sleep(200);
+
+
+                }
+                first = false;
+
+                germany.setPosition(0.73);
+                japan.setPosition(-0.59);
+//                kana.setPosition(0);
+//                akane.setPosition(0);
+                //sleep(300);
+                ruby.setPosition(0.9);//0.8
+
+
+                BL.setPower((powerBL / 5)*2);
+                BR.setPower((powerBR / 5)*2);
+                FL.setPower((-powerFL / 5)*2);
+                FR.setPower((-powerFR / 5)*2);
+            }}
+            //DAVID FOR THE LOVE OF GOD DO NOT SWAP
+            //kk gotchu
+            if(temp == 0){
+
+                kana.setPosition(1);
+                akane.setPosition(1);
+                italy.setPosition(0.5);
+
+            }
+
+            if(temp == 1 && opclosval == 0){
+                if(first2 == true) {
+                    //transfer the weird thing between claws
+                    sleep(100);
+                    italy.setPosition(0);
+                    sleep(100);
+                    germany.setPosition(1);
+                    japan.setPosition(-1);
+                    sleep(300);
+                    ruby.setPosition(0.9);
+                    kana.setPosition(0.1);
+                    akane.setPosition(0.1);
+                    sleep(400);
+                    germany.setPosition(-0.95);
+                    japan.setPosition(1);
+                    first2 = false;
+
+                    BL.setPower(powerBL);
+                    BR.setPower(powerBR);
+                    FL.setPower(-powerFL);
+                    FR.setPower(-powerFR);
+                }
+            //    ruby.setPosition(0.8);
+                BL.setPower((powerBL / 5)*4);
+                BR.setPower((powerBR / 5)*4);
+                FL.setPower((-powerFL / 5)*4);
+                FR.setPower((-powerFR / 5)*4);
+
+
+            }
+            if(drop){
+                italy.setPosition(0.55);
+
+            }
+
+
+
+
+/*            if(opclosval == 1) {
+                BL.setPower((powerBL / 5)*2);
+                BR.setPower((powerBR / 5)*2);
+                FL.setPower((-powerFL / 5)*2);
+                FR.setPower((-powerFR / 5)*2);
+            }*/
+
+
+
+
+
+
+        }
+//slides
+
+
+
+    }
+    public double getAngle(){
+        double angle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+        return angle;
+    }
+    public void IMUTelemetry(){
+        telemetry.addData("IMU", "%.2f", getAngle());
+        telemetry.update();
+    }
+}
+
+
+
+
+
+// added slide code
+// Servo code is in but servos are not programmed yet :( set positions of servo for intake
+// Test if motors for slide need to be reversed
+// Add slide code to auton
+// Test if opencv works transfered from android
+//
