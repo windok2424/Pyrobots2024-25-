@@ -1,0 +1,411 @@
+package org.firstinspires.ftc.teamcode.Auton;
+
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.arcrobotics.ftclib.controller.PIDController;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.teamcode.Auton.DriveFunctions;
+
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.hardware.IMU;
+
+@Config
+
+@Autonomous(name = "brick")
+
+public class Brick extends LinearOpMode{
+
+    private PIDController controllerx;
+    private PIDController controllery;
+
+    public static double py = 0.0003, iy = 0.0001, dy = 0.00003;
+    public static double px = 0.0007, ix = 0.01, dx = 0.00003;
+    public static double f = 0;
+
+    public static int targetx = 0;
+    public static int targety = 0;
+
+    private final double ticks_in_degree = 103.8;
+
+    private DcMotorEx FL;
+    private DcMotorEx FR;
+    private DcMotorEx BL;
+    private DcMotorEx BR;
+    private DcMotorEx slide;
+
+    private IMU imu;
+
+
+    boolean first = true;
+    boolean first2 = true;
+
+
+
+    public void runOpMode() throws InterruptedException{
+
+
+        FL = hardwareMap.get(DcMotorEx.class, "BR");
+        BR = hardwareMap.get(DcMotorEx.class, "FL");
+        FR = hardwareMap.get(DcMotorEx.class, "BL");
+        BL = hardwareMap.get(DcMotorEx.class, "FR");
+        imu = hardwareMap.get(IMU.class, "imu");
+        slide = hardwareMap.get(DcMotorEx.class, "rem");
+
+
+        int YPos = BR.getCurrentPosition();
+        int XPos = BL.getCurrentPosition();
+
+        BL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        BR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        slide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+
+        BL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        BR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        slide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        slide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        waitForStart();
+
+
+//        Drive(-10000, 8000, 0, 2);
+//        serv(false, true);
+//        oop(-1500,2);
+        Drive(13000, -3500, 0, 2);
+        Drive(13000, -3500, -45, 1);
+        Drive(13000, 1000, -45, 2);
+        Drive(13000, -3500, -45, 1);
+        Drive(13000, -3500, 0, 1);
+        //do the do
+        Drive(14000, -3500, 0, 1);
+        Drive(14000, -6500, 0, 1);
+        //pick up the first one
+//        serv(true, false);
+//        serv(false, false);
+        Drive(14000, -3500, 0, 1);
+        Drive(13000, -3500, 0, 1);
+        Drive(13000, -3500, -45, 2);
+        Drive(13000, 1000, -45, 2);
+        Drive(13000, -3500, -45, 2);
+        Drive(13000, -3500, 0, 2);
+////        serv(false, true);
+////        oop(-1500, 2);
+////        serv(false, false);
+//        //now the second
+        Drive(18000, -3000, 0, 1);
+        Drive(18000, -6000, 0, 1);
+////        serv(true, false);
+////        serv(false, false);
+        Drive(13000, -3500, 0, 1);
+        Drive(13000, -3500, -45, 1);
+        Drive(13000, 1000, -45, 2);
+        Drive(13000, -3500, -45, 2);
+        Drive(13000, -3500, 0, 2);
+////        serv(false, true);
+////        oop(-1500, 2);
+//        //attempt the third
+        Drive(16000, -3500, 0, 1);
+        Drive(16000, -3500, 45, 2);
+        Drive(12000, -11000, 45, 2);//16000,4000
+        //pick up
+        Drive(13000, -3500, 45, 2);
+        Drive(13000, -3500, 0, 2);
+
+////        serv(true, false);
+////        serv(false, false);
+        Drive(13000, -3500, 0, 1);
+        Drive(13000, -3500, -45, 1);
+        Drive(13000, 1000, -45, 2);
+////        serv(false, true);
+////        oop(-1500, 2);
+    }
+
+
+    public double getAngle(){
+        double angle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+        return angle;
+    }
+
+
+    public void Drive(double xgo, double ygo, double rgo, double last){
+        ElapsedTime sec = new ElapsedTime();
+        sec.reset();
+        double current = sec.seconds();
+
+        while(opModeIsActive()){
+            current = sec.seconds();
+
+            double YPos = BR.getCurrentPosition();
+            double XPos = BL.getCurrentPosition();
+            double RPos = getAngle();
+
+
+            double realpow[] = DriveFunctions.pyrocalc(XPos, YPos, RPos, xgo, ygo, rgo);
+
+            FL.setPower(realpow[0]);
+            FR.setPower(realpow[1]);
+            BL.setPower(realpow[2]);
+            BR.setPower(realpow[3]);
+
+            if(last < current){
+                break;
+            }
+
+
+
+
+        }
+
+    }
+    public void open(){
+        Servo italy = hardwareMap.servo.get("outClaw");
+        italy.setPosition(0.9);
+    }
+    public void oop(int slid, double last){
+        Servo italy = hardwareMap.servo.get("outClaw");
+        ElapsedTime sec = new ElapsedTime();
+        sec.reset();
+
+        while(opModeIsActive()) {
+
+            double current = sec.seconds();
+            if (slid == 0) {
+                slide.setPower(0);
+            }
+            if (slid == 1) {
+                slide.setPower(0.9);
+                italy.setPosition(0);
+            }
+            if (slid == 2) {
+
+                slide.setPower(-0.9);
+            }
+
+            if(last < current){
+                sleep(100);
+                italy.setPosition(0.9);
+                sleep(300);
+                slide.setPower(-0.8);
+                double new_last = last *1000;
+
+
+                sleep((long) new_last);
+                slide.setPower(0);
+                break;
+            }
+
+        }
+    }
+    public void Turn(double rgo, double last){
+        ElapsedTime sec = new ElapsedTime();
+        sec.reset();
+        double current = sec.seconds();
+        while(opModeIsActive()){
+            current = sec.seconds();
+            double RPos = getAngle();
+            double pow = DriveFunctions.ryan(RPos, rgo);
+
+            FL.setPower(pow);
+            FR.setPower(pow);
+            BL.setPower(pow);
+            BR.setPower(pow);
+            if(last <= current){
+
+                break;
+            }
+
+        }
+
+
+
+    }
+    public void closeintakeclaw(boolean truth){
+        if(truth){
+            inleft.setPosition(0.8);
+            inright.setPosition(0.3);
+        }
+        else{
+            inleft.setPosition(0.95);
+            inright.setPosition(0.13);    
+        }
+    }
+
+    public void 
+
+    public void zpb(int targetPosition) {
+        // Set target position and mode
+        slide = hardwareMap.get(DcMotorEx.class, "rem");
+        slide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        boolean hitpos = false;
+        while(opModeIsActive()) {
+            int slidpos = slide.getCurrentPosition();
+
+            // Set motor power
+            if (slidpos > targetPosition) {
+                slide.setPower(0.5);
+
+            }
+            if (slidpos < targetPosition) {
+                slide.setPower(-0.5);
+
+            }
+            if(slidpos <= targetPosition + 25 && slidpos >= targetPosition-25){
+                slide.setPower(0);
+                hitpos = true;
+            }
+
+
+
+            telemetry.addData("Slide Target", targetPosition);
+            telemetry.addData("Slide Current", slide.getCurrentPosition());
+            telemetry.update();
+        }
+        // Wait until the motor reaches the position or the opMode is
+
+        // top the motor once the position is reached
+
+
+        // Keep the motor in place by setting the zero power behavior to BRAKE
+
+    }
+
+    public void serv(boolean extended, boolean tansup) {
+        slide = hardwareMap.get(DcMotorEx.class, "rem");
+        Servo germany = hardwareMap.servo.get("axonpowers1");
+        Servo japan = hardwareMap.servo.get("axonpowers2");
+        Servo italy = hardwareMap.servo.get("outClaw");
+        Servo aqua = hardwareMap.servo.get("aqua");
+        Servo ruby = hardwareMap.servo.get("ruby");
+        Servo kana = hardwareMap.servo.get("kana");
+        Servo akane = hardwareMap.servo.get("akane");
+
+
+
+        if(extended == false){
+            if(first == true) {
+                aqua.setPosition(1);
+                sleep(100);
+                first = false;
+                ruby.setPosition(1);
+            }
+            sleep(200);
+            aqua.setPosition(0);
+            sleep(200);
+            germany.setPosition(0.05);
+            japan.setPosition(0.95);
+        }
+        else if(extended) {
+            if (first == true) {
+                ruby.setPosition(0.77);//0.8
+                sleep(100);
+                aqua.setPosition(0.70);//0.75
+                sleep(200);
+            }
+            first = false;
+
+            germany.setPosition(0.95);
+            japan.setPosition(0.05);
+        }
+
+        if(tansup == false){
+            kana.setPosition(1);
+            akane.setPosition(1);
+            italy.setPosition(0.5);
+        }
+        if(tansup){
+            if(first2 == true) {
+                //transfer the weird thing between claws
+                sleep(100);
+                italy.setPosition(0);
+                sleep(100);
+                germany.setPosition(1);
+                japan.setPosition(-1);
+                sleep(300);
+                ruby.setPosition(0.77);
+                kana.setPosition(0.1);
+                akane.setPosition(0.1);
+                sleep(400);
+                
+                germany.setPosition(0.95);
+                japan.setPosition(0.05);
+                first2 = false;
+            }
+        }
+
+
+
+    }
+    public void Extends(boolean tounextend){
+           if(tounextend == true){ //to unextend it
+                
+                if(first == true) {                  //aqua.setPosition(1);
+
+                    sleep(100);
+                    first = false;
+                    //ruby.setPosition(0.8); //1 HEREJEOWEHDOUI
+
+                    sleep(500);
+                    aqua.setPosition(0.18); //0
+                    sleep(200);
+
+
+
+                }
+                //ruby.setPosition(0.8); // AND HERE
+//                  inleft.setPosition(1);
+//                  inright.setPosition(0);
+
+                germany.setPosition(1);
+                japan.setPosition(0);
+                
+
+
+            }
+        
+        if(tounextened == false){
+            if(first == true) {
+            //aqua.setPosition(0.70);//0.75
+                sleep(100);
+                        //ruby.setPosition(0.8);//0.8
+//              inleft.setPosition(0.8 );
+//              inright.setPosition(0.2);
+                sleep(200);
+                }
+                first = false;
+
+                germany.setPosition(0.2);
+                japan.setPosition(0.8);
+        }
+    }
+      
+        
+}
+
+
+
+
+//}
+
+
+//Added initialized motors for the four
+
+//Still todo:
+//add rem control hub into the mechanum chassis
+//configure the robot
+//Add init for odo pods
+//add set power to every motor
+//tune the robot
+//p = 0.001
+//i = 0.01
+//d = 0.0001
+//f = 0
