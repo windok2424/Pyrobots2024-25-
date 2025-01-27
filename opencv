@@ -1,0 +1,105 @@
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.openftc.easyopencv.OpenCvCamera;
+import org.openftc.easyopencv.OpenCvCameraFactory;
+import org.openftc.easyopencv.OpenCvPipeline;
+import org.opencv.core.Core;
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
+import org.opencv.core.Scalar;
+import org.opencv.imgproc.Imgproc;
+import java.util.ArrayList;
+import java.util.List;
+
+@TeleOp(name = "Red Object Detection", group = "Example")
+public class opencv extends LinearOpMode {
+    OpenCvCamera webcam;
+
+    @Override
+    public void runOpMode() {
+        // Initialize the camera
+        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
+                "cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        webcam = OpenCvCameraFactory.getInstance().createWebcam(
+                hardwareMap.get(WebcamName.class, "Logitech C270"), cameraMonitorViewId);
+
+        // Set the pipeline
+        RedDetectionPipeline pipeline = new RedDetectionPipeline();
+        webcam.setPipeline(pipeline);
+
+        // Open the camera asynchronously
+        webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
+            @Override
+            public void onOpened() {
+                webcam.startStreaming(320, 240);
+            }
+
+            @Override
+            public void onError(int errorCode) {
+                telemetry.addData("Camera Error", "Error code: " + errorCode);
+                telemetry.update();
+            }
+        });
+
+        waitForStart();
+
+        while (opModeIsActive()) {
+            List<MatOfPoint> contours = pipeline.getContours();
+            if (!contours.isEmpty()) {
+                telemetry.addData("Contours", "Detected %d red objects", contours.size());
+            } else {
+                telemetry.addData("Red Object", "Not Detected");
+            }
+
+            telemetry.update();
+            sleep(100); // Slow down the loop to avoid overloading telemetry
+        }
+
+        // Stop the camera when the OpMode ends
+        webcam.stopStreaming();
+    }
+
+    static class RedDetectionPipeline extends OpenCvPipeline {
+        private Mat hsvMat = new Mat();          // HSV image
+        private Mat mask1 = new Mat();           // Mask for lower red
+        private Mat mask2 = new Mat();           // Mask for upper red
+        private Mat combinedMask = new Mat();    // Combined mask
+        private Mat hierarchy = new Mat();       // Hierarchy for contours
+        private List<MatOfPoint> contours = new ArrayList<>();
+
+        @Override
+        public Mat processFrame(Mat input) {
+            // Convert the input frame to HSV
+            Imgproc.cvtColor(input, hsvMat, Imgproc.COLOR_RGB2HSV);
+
+            // Define the HSV ranges for red
+            Scalar lowerRed1 = new Scalar(0, 100, 100);  // Lower range
+            Scalar upperRed1 = new Scalar(10, 255, 255);
+            Scalar lowerRed2 = new Scalar(160, 100, 100); // Upper range
+            Scalar upperRed2 = new Scalar(180, 255, 255);
+
+            // Threshold the image to create masks
+            Core.inRange(hsvMat, lowerRed1, upperRed1, mask1);
+            Core.inRange(hsvMat, lowerRed2, upperRed2, mask2);
+
+            // Combine the masks
+            Core.bitwise_or(mask1, mask2, combinedMask);
+
+            // Find contours in the mask
+            contours.clear();
+            Imgproc.findContours(combinedMask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+
+            // Draw contours on the frame
+            for (MatOfPoint contour : contours) {
+                Imgproc.drawContours(input, contours, -1, new Scalar(0, 255, 0), 2); // Green outline with 2-pixel thickness
+            }
+
+            return input; // Return the processed frame
+        }
+
+        public List<MatOfPoint> getContours() {
+            return contours; // Expose the contours to the main program
+        }
+    }
+}
