@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.TeleOp;
 import com.qualcomm.robotcore.*;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -8,6 +9,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.ServoController;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -53,6 +55,9 @@ public class Mechoop extends LinearOpMode {
         Servo inleft = hardwareMap.servo.get("inleft");
         Servo inright = hardwareMap.servo.get("inright");
         ElapsedTime runtime = new ElapsedTime();
+
+
+
 
 
 
@@ -115,6 +120,9 @@ public class Mechoop extends LinearOpMode {
             boolean grab = gamepad2.a;
             boolean lower = gamepad2.b;
             boolean drop = gamepad2.y;
+            boolean slowmodetrue = gamepad1.right_bumper;
+            boolean up = gamepad2.right_bumper;
+            boolean actual_up = false;
 
 
 
@@ -130,12 +138,35 @@ public class Mechoop extends LinearOpMode {
             IMUTelemetry();
             getAngle();
 
+            if(up ==true){
+                while(true) {
+                    slide.setPower(-1);
+                }
+            }
+            if(slowmodetrue){
+
+                BL.setPower(powerBL*0.5);
+                BR.setPower(powerBR*0.5);
+                FR.setPower(-powerFR*0.5);
+                FL.setPower(-powerFL*0.5);
+
+            }
+            else {
+                BL.setPower(powerBL);
+                BR.setPower(powerBR);
+                FR.setPower(-powerFR);
+                FL.setPower(-powerFL);
+            }
             //slid
             slide.setPower(-rempow);
 
-            //goofy ahh claw stuff
-            ruby.setPosition(0.77-rotation);
 
+
+
+            //goofy ahh claw stuff
+            if(opclosval != 0) {
+                ruby.setPosition(0.75 - rotation);
+            }
             rotation = pain;
             if(rotation>0.2){
                 rotation = 0.2;
@@ -188,7 +219,7 @@ public class Mechoop extends LinearOpMode {
 
             }
             opclosval = count%2;
-            temp = count2%2;
+            temp = count2%3;
             temp2 = count3%2;
             temp3 = count4%2;
 
@@ -210,66 +241,63 @@ public class Mechoop extends LinearOpMode {
                 if(opclosval==1) {
                     if (first3 == true) {
                         aqua.setPosition(0.7); //0.7
+
+                    }else{
+                        aqua.setPosition(0.2);
                     }
-                } else{
-                    aqua.setPosition(0.18);
                 }
             }
             if(temp2==1){
                 if(opclosval==1) {
                     if (first3 == true) {
                         aqua.setPosition(1);
+                    }else{
+                        aqua.setPosition(0.18); // 0
                     }
-                } else{
-                    aqua.setPosition(0.18); // 0
                 }
             }
 
 
             if(opclosval == 0){ //to unextend it
-                if(temp==0){
+                //if(temp==0){
                     if(first == true) {
 
                         //aqua.setPosition(1);
 
-                        sleep(100);
+
                         first = false;
                         //ruby.setPosition(0.8); //1 HEREJEOWEHDOUI
+                        //ruby.setPosition(0.73);
 
-                        sleep(500);
-                        aqua.setPosition(0.18); //0
-                        sleep(200);
-
-
+                        aqua.setPosition(0.15); //0.2/0.18
 
                     }
+
+
                     //ruby.setPosition(0.8); // AND HERE
 //                    inleft.setPosition(1);
 //                    inright.setPosition(0);
 
-                    BL.setPower(powerBL);
-                    BR.setPower(powerBR);
-                    FR.setPower(-powerFR);
-                    FL.setPower(-powerFL);
 
-
-                    germany.setPosition(1);
-                    japan.setPosition(0);
+                    if(temp != 1) {
+                        germany.setPosition(0.65); // 69
+                        japan.setPosition(0.33); // 31
+                    }
                 }
 //                kana.setPosition(1);
 //                akane.setPosition(1);
 
-            }
+
             else{ //slides are not extended and go extend
-                if(temp==0){
+                //if(temp==0){
                     if(first == true) {
                         //aqua.setPosition(0.70);//0.75
 
-                        sleep(100);
+
                         //ruby.setPosition(0.8);//0.8
 //                        inleft.setPosition(0.8 );
 //                        inright.setPosition(0.2);
-                        sleep(200);
+
                     }
                     first = false;
 
@@ -281,22 +309,30 @@ public class Mechoop extends LinearOpMode {
 
 
 
-                    BL.setPower((powerBL / 5)*2);
-                    BR.setPower((powerBR / 5)*2);
-                    FL.setPower((-powerFL / 5)*2);
-                    FR.setPower((-powerFR / 5)*2);
-                }}
+
+                }
             //DAVID FOR THE LOVE OF GOD DO NOT SWAP
             //kk gotchu
             if(temp == 0){
 
-                kana.setPosition(1);
-                akane.setPosition(1);
-                italy.setPosition(0.55);
+                kana.setPosition(0.97);
+                akane.setPosition(0.97);
+                //italy.setPosition(0.55);
 
             }
 
-            if(temp == 1 && opclosval == 0){
+            if(temp == 1){
+                if(opclosval==0) {
+
+                    kana.setPosition(0.87);// 82
+                    akane.setPosition(0.87);
+                    aqua.setPosition(0.3);
+
+                    germany.setPosition(0.8);
+                    japan.setPosition(0.2);
+                }
+            }
+            if(temp==2){
                 if(first2 == true) {
                     //transfer the weird thing between claws
                     //sleep(100);
@@ -307,8 +343,8 @@ public class Mechoop extends LinearOpMode {
                     //aqua.setPosition(0);
                     //sleep(300);
                     //ruby.setPosition(0.9);
-                    kana.setPosition(0);
-                    akane.setPosition(0);
+                    kana.setPosition(0.16);
+                    akane.setPosition(0.13);
                     //sleep(300);
                     //aqua.setPosition(1);
                     //germany.setPosition(-0.95);
@@ -325,7 +361,6 @@ public class Mechoop extends LinearOpMode {
                 BR.setPower((powerBR / 5)*4);
                 FL.setPower((-powerFL / 5)*4);
                 FR.setPower((-powerFR / 5)*4);
-
 
             }
             if(drop){
